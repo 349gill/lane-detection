@@ -36,6 +36,10 @@ android {
 }
 
 dependencies {
+    implementation("androidx.camera:camera-core:1.3.0")
+    implementation("androidx.camera:camera-camera2:1.3.0")
+    implementation("androidx.camera:camera-lifecycle:1.3.0")
+    implementation("androidx.camera:camera-view:1.3.0")
     implementation("org.opencv:opencv:4.10.0-kleidicv")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
