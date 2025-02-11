@@ -12,32 +12,53 @@ import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
 import java.io.ByteArrayOutputStream
 
-/*
-    Utility class containing tools to analyze and process ImageProxy objects
- */
-class ImageProcessor(private val onLanesDetected: (List<Pair<Float, Float>>) -> Unit) : ImageAnalysis.Analyzer {
+
+class ImageProcessor(
+    private val onLanesDetected: (List<Pair<Pair<Float, Float>, Pair<Float, Float>>>) -> Unit,
+    private val onPipelineImages: (List<Bitmap>) -> Unit
+) : ImageAnalysis.Analyzer {
+
     override fun analyze(image: ImageProxy) {
         val bitmap = imageProxyToBitmap(image)
         val mat = Mat()
+        val pipelineImages = mutableListOf<Bitmap>()
 
-        Utils.bitmapToMat(bitmap, mat)
-        Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGBA2GRAY)
-        Imgproc.GaussianBlur(mat, mat, org.opencv.core.Size(5.0, 5.0), 0.0)
-        Imgproc.Canny(mat, mat, 50.0, 150.0)
-        val lines = Mat()
-        Imgproc.HoughLinesP(mat, lines, 1.0, Math.PI / 180, 50, 50.0, 10.0)
+        try {
+            Utils.bitmapToMat(bitmap, mat)
+            Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGBA2GRAY)
+            pipelineImages.add(bitmapFromMat(mat))
 
-        val detectedLines = mutableListOf<Pair<Float, Float>>()
+            Imgproc.GaussianBlur(mat, mat, org.opencv.core.Size(5.0, 5.0), 0.0)
+            pipelineImages.add(bitmapFromMat(mat))
 
-        for (i in 0 until lines.rows()) {
-            val points = lines.get(i, 0)
-            detectedLines.add(Pair(points[0].toFloat(), points[2].toFloat()))
+            Imgproc.Canny(mat, mat, 50.0, 150.0)
+            pipelineImages.add(bitmapFromMat(mat))
+
+            val lines = Mat()
+            Imgproc.HoughLinesP(mat, lines, 1.0, Math.PI / 180, 50, 50.0, 10.0)
+            val houghBitmap = bitmapFromMat(mat)
+            pipelineImages.add(houghBitmap)
+
+            val detectedLines = mutableListOf<Pair<Pair<Float, Float>, Pair<Float, Float>>>()
+            for (i in 0 until lines.rows()) {
+                val points = lines.get(i, 0)
+                detectedLines.add(
+                    Pair(points[0].toFloat(), points[1].toFloat()) to
+                            Pair(points[2].toFloat(), points[3].toFloat()))
+            }
+
+            onLanesDetected(detectedLines)
+            onPipelineImages(pipelineImages)
+        } finally {
+            mat.release()
+            image.close()
         }
+    }
 
-        onLanesDetected(detectedLines)
-        mat.release()
-        lines.release()
-        image.close()
+    private fun bitmapFromMat(mat: Mat): Bitmap {
+        val bitmap = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888)
+        Utils.matToBitmap(mat, bitmap)
+        return bitmap
     }
 
     private fun imageProxyToBitmap(image: ImageProxy): Bitmap {

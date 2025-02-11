@@ -14,17 +14,17 @@ class LaneOverlayView(context: Context, attrs: AttributeSet?) : View(context, at
         style = Paint.Style.STROKE
     }
 
-    private var laneLines: List<Pair<Float, Float>> = emptyList()
+    private var laneLines: List<Pair<Pair<Float, Float>, Pair<Float, Float>>> = emptyList()
 
-    fun updateLaneLines(lines: List<Pair<Float, Float>>) {
+    fun updateLaneLines(lines: List<Pair<Pair<Float, Float>, Pair<Float, Float>>>) {
         laneLines = lines
-        postInvalidate()  // Request redraw
+        postInvalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        for ((x, y) in laneLines) {
-            canvas.drawLine(x, height.toFloat(), y, 0f, paint)
+        for ((start, end) in laneLines) {
+            canvas.drawLine(start.first, start.second, end.first, end.second, paint)
         }
     }
 }
