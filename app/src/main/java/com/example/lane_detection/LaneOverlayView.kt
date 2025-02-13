@@ -9,7 +9,7 @@ import android.view.View
 
 class LaneOverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
     private val paint = Paint().apply {
-        color = Color.RED
+        color = Color.GREEN
         strokeWidth = 8f
         style = Paint.Style.STROKE
     }

@@ -1,6 +1,5 @@
 package com.example.lane_detection
 
-import PipelineViewModel
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
@@ -23,7 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var previewView: androidx.camera.view.PreviewView
     private lateinit var laneOverlay: LaneOverlayView
     private lateinit var cameraExecutor: ExecutorService
-    private val pipelineImages = mutableListOf<Bitmap>()
+    private val pipelineImages = mutableListOf<Pair<Bitmap, String>>()
 
     private val viewModel: PipelineViewModel by viewModels()
 
@@ -35,7 +34,6 @@ class MainActivity : AppCompatActivity() {
         previewView = findViewById(R.id.previewView)
         laneOverlay = findViewById(R.id.laneOverlay)
         cameraExecutor = Executors.newSingleThreadExecutor()
-
 
         OpenCVLoader.initDebug()
 
@@ -72,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         cameraProviderFuture.addListener({
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
             val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
+                it.surfaceProvider = previewView.surfaceProvider
             }
 
             val imageAnalyzer = ImageAnalysis.Builder()
@@ -85,11 +83,11 @@ class MainActivity : AppCompatActivity() {
                                 laneOverlay.updateLaneLines(lines)
                             }
                         },
-                        { images ->
+                        { imagesWithSteps ->
                             runOnUiThread {
                                 pipelineImages.clear()
-                                pipelineImages.addAll(images)
-                                viewModel.updatePipelineImages(images)
+                                pipelineImages.addAll(imagesWithSteps)
+                                viewModel.updatePipelineImages(imagesWithSteps)
                             }
                         }
                     ))
